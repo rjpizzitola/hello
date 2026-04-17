@@ -1,19 +1,19 @@
 ---
-title: "Replication of Study X by Sample & Sample (20xx, Psychological Science)"
-author: "Replication Author[s] (contact information)"
-date: "`r format(Sys.time(), '%B %d, %Y')`"
+title: Replication of "Experience With a Linguistic Variant Affects the Acquisition of Its Sociolinguistic Meaning: An Alien-Language-Learning Experiment" by Wei Lai, Peter Racz, & Gareth Robertsa (2020, Cognitive Science)
+author: Rebecca Pizzitola (rjpizzit@stanford.edu)
+date: `r format(Sys.time(), '%B %d, %Y')`
 format:
   html:
     toc: true
     toc_depth: 3
 ---
 
-<!-- Replication reports should all use this template to standardize reporting across projects.  These reports will be public supplementary materials that accompany the summary report(s) of the aggregate results. -->
-
 ## Introduction
 
-[No abstract is needed.]  Each replication project will have a straightforward, no frills report of the study and results.  These reports will be publicly available as supplementary material for the aggregate report(s) of the project as a whole.  Also, to maximize project integrity, the intro and methods will be written and critiqued in advance of data collection.  Introductions can be just 1-2 paragraphs clarifying the main idea of the original study, the target finding for replication, and any other essential information.  It will NOT have a literature review -- that is in the original publication. You can write both the introduction and the methods in past tense.  
-
+This study by Lai et. al investigate how people learn social meaning of linguistic variants, arguing that the more salient a variant is, the faster its social meaning can be learned. They assume that pre-existing experience of a variant will influence its salience.
+Experiment 1 in this study exposed participants to an artificial language in two stages, the first with only the language items, and the second with images of aliens which added social context to each variant. The manipulation that occurred in this experiment was whether or not participants were exposed to a particular linguistic variant, associated with one of the aliens, in the first stage. The lack of exposure in stage 1 meant the variant was unexpected and therefore more salient in the second stage. At the end of the learning stages, the participants were tested on what the variant meant.
+The researchers found that the participants more readily picked up on the social meanings of the variants when they were unexpected (in the condition where they were not exposed to the variant in stage 1). The authors conclude that unexpectedness increases the salience of the variant's social meaning, which makes it easier to learn.
+In this study reproduction, I will use the same methods and materials for experiment 1 that Lai et. al (2020) used in their paper, and try to replicate their finding that unexpected variants will lead to more accurate social meaning identification from participants.
 
 ## Methods
 
