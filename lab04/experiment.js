@@ -298,10 +298,10 @@ const timeline = [
   instructionsScreen,
   ...practiceTimeline,
   endPractice,
-  ...firstBlock,
-  restBreak,
-  ...secondBlock,
-  debrief,
+  // ...firstBlock,
+  // restBreak,
+  // ...secondBlock,
+  // debrief,
   save_data,
 ];
 
