@@ -279,19 +279,19 @@ const debrief = {
   choices: [" "],
 };
 
-const subject_id = jsPsych.randomization(10);
-const filename = `${subject_id}.csv()`;
+//const subject_id = jsPsych.randomization(10);
+//const filename = `${subject_id}.csv()`;
 
 // --- Run experiment ---
 const timeline = [
   welcomeScreen,
   instructionsScreen,
-  // ...practiceTimeline,
-  // endPractice,
-  // ...firstBlock,
-  // restBreak,
-  // ...secondBlock,
-  // debrief,
+  ...practiceTimeline,
+  endPractice,
+  ...firstBlock,
+  restBreak,
+  ...secondBlock,
+  debrief,
   save_data,
 ];
 
