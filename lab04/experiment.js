@@ -280,6 +280,7 @@ const debrief = {
 };
 
 // --- Data saving ---
+// doesnt WORKKKKAKGUHIGUHS
 
 const subject_id = jsPsych.randomization.randomID(10);
 const filename = `${subject_id}.csv`;
@@ -289,7 +290,7 @@ const save_data = {
   action: "save",
   experiment_id: "9JeF3mkj4UuR",
   filename: filename,
-  data: jsPsych.data.get().csv(),
+  data_string: () => jsPsych.data.get().csv(),
 };
 
 // --- Run experiment ---
