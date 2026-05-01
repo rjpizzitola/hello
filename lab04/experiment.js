@@ -295,6 +295,12 @@ const save_data = {
   data: "a,b,c\n1,2,3",
 };
 
+const endScreen = {
+  type: jsPsychHtmlKeyboardResponse,
+  stimulus: "<p>Data saved. Press space to finish.</p>",
+  choices: [" "],
+};
+
 // --- Run experiment ---
 const timeline = [
   welcomeScreen,
@@ -306,6 +312,7 @@ const timeline = [
   // ...secondBlock,
   // debrief,
   save_data,
+  endScreen,
 ];
 
 jsPsych.run(timeline);
