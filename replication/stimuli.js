@@ -1,275 +1,113 @@
-/*
-FIRST LEARNING PHASE: Learning without aliens
+// Experiment 1 Stimuli: "First Encounter"
+// Wei Lai, Peter Racz, Gareth Roberts (2020)
+// -nup exposure
 
-Structure from paper:
-- 14 root words
-- each appears in:
-    - singular form
-    - plural form (suffix: either -nup or -dup)(this is what is manipulated in stage 1, whether participants see -nup at all)
-- total = 28 words
+// Participants are either put into the Exposure group, and they see "-nup" in the first stage
+// or the NoExposure group, where they only see "-dup" in the first stage.
 
-Words are divided into:
-- 7 sets of 4 words each
-- each set must contain:
-    - 2 singular words
-    - 2 plural words
-    - all different stems
+// the second stage is a repeat of the first stage but with alien images
+// Norls see "-nup" words 25% of the time and "-dup" words 75% of the time
+// Gulus only see "-dup" words
 
-For each set:
-1. Passive exposure trials
-   - show object/word pair
-   - participant told to memorize and clicks CONTINUE
+// each vocab word will consist of the singular version, a singular image, a plural image, and a foiled word
+// the logic of the experiment builder will assign the suffixes depending on participant's exposure status and alien assignment
 
-2. Forced-choice trials
-   - show image
-   - choose between:
-        a) correct word
-        b) foil word (same suffix, altered stem)
-
-Then:
-- all 7 sets completed
-- entire process repeated once
-*/
-
-// ROOT WORDS
-const rootWords = [
-  "nesel",
-  "laniz",
-  "wumos",
-  "maqub",
-  "firot",
-  "tugan",
-  "wukin",
-  "jemulok",
-  "nuwik",
-  "sehilod",
-  "gequzis",
-  "takoles",
-  "falon",
-  "hiwen",
+const vocabulary = [
+  // contains the root words, foiled version, and their respective images
+  {
+    root: "nesel",
+    singular_image: "nesel_sing.png",
+    plural_image: "nesel_plur.png",
+    foil: "neles",
+  },
+  {
+    root: "laniz",
+    singular_image: "laniz_sing.png",
+    plural_image: "laniz_plur.png",
+    foil: "lazin",
+  },
+  {
+    root: "wumos",
+    singular_image: "wumos_sing.png",
+    plural_image: "wumos_plur.png",
+    foil: "womus",
+  },
+  {
+    root: "maqub",
+    singular_image: "maqub_sing.png",
+    plural_image: "maqub_plur.png",
+    foil: "mabuq",
+  },
+  {
+    root: "firot",
+    singular_image: "firot_sing.png",
+    plural_image: "firot_plur.png",
+    foil: "fitor",
+  },
+  {
+    root: "tugan",
+    singular_image: "tugan_sing.png",
+    plural_image: "tugan_plur.png",
+    foil: "tagun",
+  },
+  {
+    root: "wukin",
+    singular_image: "wukin_sing.png",
+    plural_image: "wukin_plur.png",
+    foil: "wikun",
+  },
+  {
+    root: "jemulok",
+    singular_image: "jemulok_sing.png",
+    plural_image: "jemulok_plur.png",
+    foil: "jelumok",
+  },
+  {
+    root: "nuwik",
+    singular_image: "nuwik_sing.png",
+    plural_image: "nuwik_plur.png",
+    foil: "niwuk",
+  },
+  {
+    root: "sehilod",
+    singular_image: "sehilod_sing.png",
+    plural_image: "sehilod_plur.png",
+    foil: "sihelod",
+  },
+  {
+    root: "gequzis",
+    singular_image: "gequzis_sing.png",
+    plural_image: "gequzis_plur.png",
+    foil: "gequsiz",
+  },
+  {
+    root: "takoles",
+    singular_image: "takoles_sing.png",
+    plural_image: "takoles_plur.png",
+    foil: "katoles",
+  },
+  {
+    root: "falon",
+    singular_image: "falon_sing.png",
+    plural_image: "falon_plur.png",
+    foil: "folan",
+  },
+  {
+    root: "hiwen",
+    singular_image: "hiwen_sing.png",
+    plural_image: "hiwen_plur.png",
+    foil: "wihen",
+  },
 ];
 
-/*
-SUFFIX ASSIGNMENT
-
-Paper does not specify which roots take -nup vs -dup in the first learning phase for the Exposure group.
-
-For now:
-- manually assign half to -nup and half to -dup
-- this is the part that is manipulated between experimental groups, the nonExposure group will not see -nup at all. But I'm not sure how often/with which words the Exposure group sees it.
-*/
-
-const pluralSuffixMap = {
-  nesel: "nup",
-  laniz: "dup",
-  wumos: "nup",
-  maqub: "dup",
-  firot: "nup",
-  tugan: "dup",
-  wukin: "nup",
-  jemulok: "dup",
-  nuwik: "nup",
-  sehilod: "dup",
-  gequzis: "nup",
-  takoles: "dup",
-  falon: "nup",
-  hiwen: "dup",
-};
-
-/*
-IMAGE MAPPING
-
-The publication does not include images, so I will need to make them myself. I don't have time to do it right now though.
-*/
-
-const imageMap = {
-  nesel: {
-    singularImage: "images/nesel_singular_placeholder.png",
-    pluralImage: "images/nesel_plural_placeholder.png",
+// set of images per species of alien to be used at random
+const aliens = [
+  {
+    name: "Norl",
+    images: ["norl_1.png", "norl_2.png", "norl_3.png"],
   },
-
-  laniz: {
-    singularImage: "images/laniz_singular_placeholder.png",
-    pluralImage: "images/laniz_plural_placeholder.png",
+  {
+    name: "Gulu",
+    images: ["gulu_1.png", "gulu_2.png", "gulu_3.png"],
   },
-
-  wumos: {
-    singularImage: "images/wumos_singular_placeholder.png",
-    pluralImage: "images/wumos_plural_placeholder.png",
-  },
-
-  maqub: {
-    singularImage: "images/maqub_singular_placeholder.png",
-    pluralImage: "images/maqub_plural_placeholder.png",
-  },
-
-  firot: {
-    singularImage: "images/firot_singular_placeholder.png",
-    pluralImage: "images/firot_plural_placeholder.png",
-  },
-
-  tugan: {
-    singularImage: "images/tugan_singular_placeholder.png",
-    pluralImage: "images/tugan_plural_placeholder.png",
-  },
-
-  wukin: {
-    singularImage: "images/wukin_singular_placeholder.png",
-    pluralImage: "images/wukin_plural_placeholder.png",
-  },
-
-  jemulok: {
-    singularImage: "images/jemulok_singular_placeholder.png",
-    pluralImage: "images/jemulok_plural_placeholder.png",
-  },
-
-  nuwik: {
-    singularImage: "images/nuwik_singular_placeholder.png",
-    pluralImage: "images/nuwik_plural_placeholder.png",
-  },
-
-  sehilod: {
-    singularImage: "images/sehilod_singular_placeholder.png",
-    pluralImage: "images/sehilod_plural_placeholder.png",
-  },
-
-  gequzis: {
-    singularImage: "images/gequzis_singular_placeholder.png",
-    pluralImage: "images/gequzis_plural_placeholder.png",
-  },
-
-  takoles: {
-    singularImage: "images/takoles_singular_placeholder.png",
-    pluralImage: "images/takoles_plural_placeholder.png",
-  },
-
-  falon: {
-    singularImage: "images/falon_singular_placeholder.png",
-    pluralImage: "images/falon_plural_placeholder.png",
-  },
-
-  hiwen: {
-    singularImage: "images/hiwen_singular_placeholder.png",
-    pluralImage: "images/hiwen_plural_placeholder.png",
-  },
-};
-
-//BUILD SINGULAR + PLURAL FORMS
-const lexicalItems = rootWords.map((root) => {
-  const suffix = pluralSuffixMap[root];
-
-  return {
-    root: root,
-    singular: root,
-    plural: `${root}${suffix}`,
-    pluralSuffix: suffix,
-
-    singularImage: imageMap[root].singularImage,
-    pluralImage: imageMap[root].pluralImage,
-  };
-});
-
-/*
-FIXED 7 WORD SETS
-
-Each set contains:
-- 2 singular
-- 2 plural
-- all different stems
-
-Randomize set/word order later in experiment.js
-
-I'm really not sure that this is the way to do it, but coding it up a different way feels challenging right now.
-*/
-
-const firstLearningSets = [
-  [
-    { root: "nesel", form: "singular" },
-    { root: "laniz", form: "singular" },
-    { root: "wumos", form: "plural" },
-    { root: "maqub", form: "plural" },
-  ],
-  [
-    { root: "firot", form: "singular" },
-    { root: "tugan", form: "singular" },
-    { root: "wukin", form: "plural" },
-    { root: "jemulok", form: "plural" },
-  ],
-  [
-    { root: "nuwik", form: "singular" },
-    { root: "sehilod", form: "singular" },
-    { root: "gequzis", form: "plural" },
-    { root: "takoles", form: "plural" },
-  ],
-  [
-    { root: "falon", form: "singular" },
-    { root: "hiwen", form: "singular" },
-    { root: "nesel", form: "plural" },
-    { root: "laniz", form: "plural" },
-  ],
-  [
-    { root: "wumos", form: "singular" },
-    { root: "maqub", form: "singular" },
-    { root: "firot", form: "plural" },
-    { root: "tugan", form: "plural" },
-  ],
-  [
-    { root: "wukin", form: "singular" },
-    { root: "jemulok", form: "singular" },
-    { root: "nuwik", form: "plural" },
-    { root: "sehilod", form: "plural" },
-  ],
-  [
-    { root: "gequzis", form: "singular" },
-    { root: "takoles", form: "singular" },
-    { root: "falon", form: "plural" },
-    { root: "hiwen", form: "plural" },
-  ],
 ];
-
-// HELPERS
-function getWordForm(root, formType) {
-  const item = lexicalItems.find((item) => item.root === root);
-
-  if (formType === "singular") {
-    return item.singular;
-  }
-
-  if (formType === "plural") {
-    return item.plural;
-  }
-
-  return null;
-}
-
-function getImageForm(root, formType) {
-  const item = lexicalItems.find((item) => item.root === root);
-
-  if (formType === "singular") {
-    return item.singularImage;
-  }
-
-  if (formType === "plural") {
-    return item.pluralImage;
-  }
-
-  return null;
-}
-
-/*
-EXPORTS
-
-For use in experiment.js
-
-We haven't done it this way in class demos before, but this is the way I'm used to doing things at my Corporate Tech Jobs (cringe). And since I'm doing a ton of guesswork already I thought well, might as well do what I'm comfy with.
-
-*/
-
-const firstLearningStimuli = firstLearningSets.map((set) => {
-  return set.map((item) => ({
-    root: item.root,
-    form: item.form,
-    word: getWordForm(item.root, item.form),
-    image: getImageForm(item.root, item.form),
-  }));
-});
