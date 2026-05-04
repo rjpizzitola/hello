@@ -771,12 +771,12 @@ const suffixTask = buildSuffixSelectionTimeline();
 const alienTask = buildAlienSelectionTimeline();
 
 const timeline = [
-  // welcome,
-  // instructions_stage1,
-  // ...stage1,
-  // ...alienFam,
-  // instructions_stage2,
-  // ...stage2,
+  welcome,
+  instructions_stage1,
+  ...stage1,
+  ...alienFam,
+  instructions_stage2,
+  ...stage2,
   instructions_test,
   ...suffixTask,
   ...alienTask,
