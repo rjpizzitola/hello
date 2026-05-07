@@ -93,7 +93,7 @@ const instructions_stage1 = {
 // STAGE 1: LEARNING WITHOUT ALIENS
 // ─────────────────────────────────────────────────────────────────────────────
 // The 14 words are divided into 7 sets of 4 (2 singular + 2 plural, distinct stems).
-// For each set: passive exposure × 4, then forced-choice × 2 (plural only).
+// For each set: passive exposure × 4, then forced-choice × 4 (all words).
 // The whole sequence is repeated once (2 total reps per word).
 // Condition determines which suffix appears on plural words.
 
@@ -103,17 +103,25 @@ function getSuffix(word) {
     : word.notexposed_suffix;
 }
 
-// Build 7 sets of 4 words (2 sing + 2 plur, distinct stems)
-// We fix the sets here rather than randomising to ensure each set
-// always has exactly 2 singular and 2 plural items with distinct stems.
+// Build 7 sets of 4 words matching the paper's constraint:
+//   - exactly 2 words shown as singular, 2 shown as plural
+//   - all 4 stems are distinct (guaranteed since vocabulary has no duplicates)
+// Each word is assigned a form (singular or plural) for this set.
+// Assignment alternates so across a shuffled list words[0,2] get singular, words[1,3] get plural — then the whole set is reshuffled for presentation order.
 function buildStage1Sets() {
-  // Pair words into sets of 2; each pair will contribute 1 singular + 1 plural trial
   const wordsCopy = shuffle([...vocabulary]);
   const sets = [];
   for (let i = 0; i < wordsCopy.length; i += 4) {
-    sets.push(wordsCopy.slice(i, i + 4));
+    const group = wordsCopy.slice(i, i + 4);
+    // Assign forms: first 2 words → singular, last 2 → plural
+    // (the group itself is already shuffled so this is random)
+    const assigned = group.map((word, idx) => ({
+      word,
+      isPlural: idx >= 2, // words[0,1] singular; words[2,3] plural
+    }));
+    sets.push(assigned);
   }
-  return sets; // 7 sets × 4 words
+  return sets; // 7 sets × 4 assigned words
 }
 
 function buildPassiveExposureTrial(word, isPlural, suffix, phase) {
@@ -139,12 +147,12 @@ function buildPassiveExposureTrial(word, isPlural, suffix, phase) {
   };
 }
 
-function buildForcedChoiceTrial(word, suffix, phase) {
-  // Forced-choice: stem identification only. Both options carry the same suffix
-  // so NoExposure participants never see -nup in Stage 1. The foil differs
-  // only in the stem (word.foil).
-  const correctWord = `${word.root}${suffix}`;
-  const foilWord = `${word.foil}${suffix}`;
+function buildForcedChoiceTrial(word, suffix, isPlural, phase) {
+  // Stem identification: both options carry the same suffix (or none for singular),
+  // differing only in the stem. NoExposure participants never see -nup in Stage 1.
+  const correctWord = isPlural ? `${word.root}${suffix}` : word.root;
+  const foilWord = isPlural ? `${word.foil}${suffix}` : word.foil;
+  const imageFile = isPlural ? word.plural_image : word.singular_image;
   const options = shuffle([correctWord, foilWord]);
   const correctIndex = options.indexOf(correctWord);
 
@@ -152,7 +160,7 @@ function buildForcedChoiceTrial(word, suffix, phase) {
     type: jsPsychHtmlButtonResponse,
     stimulus: `
       <div class="trial-box">
-        ${img(word.plural_image, "stim-image")}
+        ${img(imageFile, "stim-image")}
         <p class="instr-text">Which word matches this picture?</p>
       </div>`,
     choices: options,
@@ -160,6 +168,7 @@ function buildForcedChoiceTrial(word, suffix, phase) {
       task: "forced_choice",
       phase: phase,
       word_root: word.root,
+      is_plural: isPlural,
       correct_word: correctWord,
       foil_word: foilWord,
       correct_index: correctIndex,
@@ -206,28 +215,28 @@ function buildStage1Timeline() {
     const sets = buildStage1Sets();
 
     for (const wordSet of sets) {
-      // Passive exposure: all 4 words (2 sing + 2 plur), randomised order
+      // Passive exposure: each word shown in its assigned form only
+      // (2 singular + 2 plural per set, all distinct stems)
       const exposureTrials = [];
-      for (const word of wordSet) {
+      for (const { word, isPlural } of wordSet) {
         const suffix = getSuffix(word);
-        // Singular
         exposureTrials.push(
-          buildPassiveExposureTrial(word, false, null, "stage1"),
-        );
-        // Plural
-        exposureTrials.push(
-          buildPassiveExposureTrial(word, true, suffix, "stage1"),
+          buildPassiveExposureTrial(
+            word,
+            isPlural,
+            isPlural ? suffix : null,
+            "stage1",
+          ),
         );
       }
       shuffle(exposureTrials).forEach((t) => timeline.push(t));
 
-      // Forced-choice: pick 2 of the 4 words for testing (the plural forms)
-      // foil suffix is the "other" suffix to what the word actually uses
-      const fcWords = shuffle([...wordSet]).slice(0, 2);
-      for (const word of fcWords) {
+      // Forced-choice: test all 4 words in their assigned form.
+      // Shuffle so the test order is randomised independently of exposure order.
+      for (const { word, isPlural } of shuffle([...wordSet])) {
         const suffix = getSuffix(word);
-        const correctWord = `${word.root}${suffix}`;
-        timeline.push(buildForcedChoiceTrial(word, suffix, "stage1"));
+        const correctWord = isPlural ? `${word.root}${suffix}` : word.root;
+        timeline.push(buildForcedChoiceTrial(word, suffix, isPlural, "stage1"));
         timeline.push(buildFeedbackTrial(correctWord, "stage1"));
       }
     }
@@ -379,17 +388,18 @@ const instructions_stage2 = {
 };
 
 function buildStage2Sets() {
-  // 14 words → 7 sets of 4 (2 Gulu-assigned + 2 Norl-assigned per set)
-  // We assign words to species deterministically (any split works since
-  // the suffix each species uses per word is encoded in vocabulary).
+  // 14 words → 7 sets of 4, each with:
+  //   - 2 Gulu-assigned + 2 Norl-assigned (interleaved)
+  //   - 2 singular + 2 plural (first 2 in group → singular, last 2 → plural)
+  //   - all 4 stems distinct (guaranteed by vocabulary having no duplicates)
   const shuffled = shuffle([...vocabulary]);
   const sets = [];
   for (let i = 0; i < shuffled.length; i += 4) {
     const wordGroup = shuffled.slice(i, i + 4);
-    // Interleave Gulu and Norl: [w0→Gulu, w1→Norl, w2→Gulu, w3→Norl]
     const assigned = wordGroup.map((w, idx) => ({
       word: w,
-      species: idx % 2 === 0 ? "Gulu" : "Norl",
+      species: idx % 2 === 0 ? "Gulu" : "Norl", // w0,w2→Gulu; w1,w3→Norl
+      isPlural: idx >= 2, // w0,w1→singular; w2,w3→plural
     }));
     sets.push(assigned);
   }
@@ -427,10 +437,12 @@ function buildPassiveExposureTrial2(word, isPlural, suffix, species, phase) {
   };
 }
 
-function buildForcedChoiceTrial2(word, suffix, species, phase) {
-  // Stem identification: foil carries the same suffix, differs only in stem.
-  const correctWord = `${word.root}${suffix}`;
-  const foilWord = `${word.foil}${suffix}`;
+function buildForcedChoiceTrial2(word, suffix, isPlural, species, phase) {
+  // Stem identification: foil carries the same suffix (or none for singular),
+  // differing only in stem. Alien speaker is shown alongside the image.
+  const correctWord = isPlural ? `${word.root}${suffix}` : word.root;
+  const foilWord = isPlural ? `${word.foil}${suffix}` : word.foil;
+  const imageFile = isPlural ? word.plural_image : word.singular_image;
   const options = shuffle([correctWord, foilWord]);
   const correctIndex = options.indexOf(correctWord);
   const alienImage = pick(aliens.find((a) => a.name === species).images);
@@ -444,7 +456,7 @@ function buildForcedChoiceTrial2(word, suffix, species, phase) {
           ${img(alienImage, "alien-small")}
           <span class="species-label ${labelClass}">${species}</span>
         </div>
-        ${img(word.plural_image, "stim-image")}
+        ${img(imageFile, "stim-image")}
         <p class="instr-text">Which word did the ${species} use?</p>
       </div>`,
     choices: options,
@@ -452,6 +464,7 @@ function buildForcedChoiceTrial2(word, suffix, species, phase) {
       task: "forced_choice",
       phase: phase,
       word_root: word.root,
+      is_plural: isPlural,
       species: species,
       correct_word: correctWord,
       foil_word: foilWord,
@@ -475,25 +488,30 @@ function buildStage2Timeline() {
     const sets = buildStage2Sets();
 
     for (const wordSet of sets) {
-      // Passive exposure: singular + plural for each assigned word (with alien)
+      // Passive exposure: each word shown in its assigned form only
+      // (2 singular + 2 plural, all distinct stems, each with alien speaker)
       const exposureTrials = [];
-      for (const { word, species } of wordSet) {
+      for (const { word, species, isPlural } of wordSet) {
         const suffix = species === "Gulu" ? word.gulu_suffix : word.norl_suffix;
         exposureTrials.push(
-          buildPassiveExposureTrial2(word, false, null, species, "stage2"),
-        );
-        exposureTrials.push(
-          buildPassiveExposureTrial2(word, true, suffix, species, "stage2"),
+          buildPassiveExposureTrial2(
+            word,
+            isPlural,
+            isPlural ? suffix : null,
+            species,
+            "stage2",
+          ),
         );
       }
       shuffle(exposureTrials).forEach((t) => timeline.push(t));
 
-      // Forced-choice: 2 of the 4 words (plural only)
-      const fcItems = shuffle([...wordSet]).slice(0, 2);
-      for (const { word, species } of fcItems) {
+      // Forced-choice: all 4 words in their assigned form, order reshuffled
+      for (const { word, species, isPlural } of shuffle([...wordSet])) {
         const suffix = species === "Gulu" ? word.gulu_suffix : word.norl_suffix;
-        const correctWord = `${word.root}${suffix}`;
-        timeline.push(buildForcedChoiceTrial2(word, suffix, species, "stage2"));
+        const correctWord = isPlural ? `${word.root}${suffix}` : word.root;
+        timeline.push(
+          buildForcedChoiceTrial2(word, suffix, isPlural, species, "stage2"),
+        );
         timeline.push(buildFeedbackTrial(correctWord, "stage2"));
       }
     }
@@ -512,8 +530,8 @@ const instructions_test = {
     <div class="instr-box">
       <h2>Test</h2>
       <p>You have finished learning the language! Now we will test what you have learned.</p>
-      <p>There are two short tasks. <strong>No feedback</strong> will be given this time — just answer as best you can.</p>
-      <p>Some of the words may be ones you have not seen before. That is fine — use your best judgment.</p>
+      <p>There are two short tasks. <strong>No feedback</strong> will be given this time, just answer as best you can.</p>
+      <p>Some of the words may be ones you have not seen before. That is fine, use your best judgment.</p>
       <p>Click <strong>Continue</strong> to start the test.</p>
     </div>`,
   choices: ["Continue"],
@@ -670,12 +688,12 @@ function buildAlienSelectionTrial(word, suffix, isNovel) {
       <div class="trial-box">
         <div class="alien-choices-header">
           <div class="alien-option">
-            ${img(testAliens["norl"], "alien-medium")}
-            <span class="species-label norl-label">Norl</span>
-          </div>
-          <div class="alien-option">
             ${img(testAliens["gulu"], "alien-medium")}
             <span class="species-label gulu-label">Gulu</span>
+          </div>
+          <div class="alien-option">
+            ${img(testAliens["norl"], "alien-medium")}
+            <span class="species-label norl-label">Norl</span>
           </div>
         </div>
         <div class="word-display">${displayWord}</div>
@@ -734,7 +752,7 @@ const debrief = {
     <div class="instr-box">
       <h2>You're done!</h2>
       <p>Thank you for completing this study.</p>
-      <p>This experiment investigates how people learn associations between words and social groups in a new language.</p>
+      <p>This experiment investigates how people learn associations between word variations and social groups in a new language.</p>
       <p>Your data is being saved. Please wait a moment before closing this window.</p>
     </div>`,
   choices: ["Save my data"],
@@ -755,7 +773,6 @@ const end_screen = {
     <div class="instr-box">
       <h2>All done</h2>
       <p>Your data has been saved. You may now close this window.</p>
-      <p>If you have a completion code, please return to the study page now.</p>
     </div>`,
   choices: [], // no button — participant just closes the tab
 };
