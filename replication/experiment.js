@@ -547,8 +547,6 @@ const instructions_test = {
 // between a -dup and a -nup plural form.
 // Old words: 14 × 2 species × 2 reps = 56 trials
 // Novel words: 5 × 2 species × 2 reps = 20 trials
-// Filler (singular or wrong-stem) trials: 34 (omitted here for brevity;
-//   see paper p.11 — these tested singular identification, not suffix choice)
 
 function buildSuffixSelectionTrial(word, species, isNovel, rep) {
   const alienImage = testAliens[species.toLowerCase()];
