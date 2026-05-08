@@ -38,6 +38,7 @@ function img(filename, cls = "") {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const jsPsych = initJsPsych({
+  show_progress_bar: true,
   on_finish: function () {
     // Data is saved via jsPsychPipe; nothing extra needed here.
   },
