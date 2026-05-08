@@ -133,20 +133,19 @@
         text-align: center;
       }
 
-      /* Stage 2 trial: alien speaker sits in top-left corner of the card */
-      .stage2-trial {
-        position: relative;
+      /* Stage 2 trial: alien and word image side by side, equal size */
+      .stage2-pair {
+        display: flex;
+        gap: 32px;
+        justify-content: center;
+        align-items: flex-end;
       }
 
-      .alien-speaker {
+      .stage2-item {
         display: flex;
+        flex-direction: column;
         align-items: center;
         gap: 10px;
-        align-self: flex-start;
-        background: var(--bg);
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 8px 14px;
       }
 
       /* ── Images ────────────────────────────────────────────────────────────── */
@@ -160,12 +159,6 @@
       .alien-image {
         max-width: 220px;
         max-height: 220px;
-        object-fit: contain;
-      }
-
-      .alien-small {
-        width: 52px;
-        height: 52px;
         object-fit: contain;
       }
 

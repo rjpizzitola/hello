@@ -417,12 +417,16 @@ function buildPassiveExposureTrial2(word, isPlural, suffix, species, phase) {
     type: jsPsychHtmlButtonResponse,
     stimulus: `
       <div class="trial-box stage2-trial">
-        <div class="alien-speaker">
-          ${img(alienImage, "alien-small")}
-          <span class="species-label ${labelClass}">${species}</span>
+        <div class="stage2-pair">
+          <div class="stage2-item">
+            ${img(alienImage, "stim-image")}
+            <span class="species-label ${labelClass}">${species}</span>
+          </div>
+          <div class="stage2-item">
+            ${img(imageFile, "stim-image")}
+            <div class="word-display">${displayWord}</div>
+          </div>
         </div>
-        <div class="word-display">${displayWord}</div>
-        ${img(imageFile, "stim-image")}
       </div>`,
     choices: ["Continue"],
     data: {
@@ -453,12 +457,16 @@ function buildForcedChoiceTrial2(word, suffix, isPlural, species, phase) {
     type: jsPsychHtmlButtonResponse,
     stimulus: `
       <div class="trial-box stage2-trial">
-        <div class="alien-speaker">
-          ${img(alienImage, "alien-small")}
-          <span class="species-label ${labelClass}">${species}</span>
+        <div class="stage2-pair">
+          <div class="stage2-item">
+            ${img(alienImage, "stim-image")}
+            <span class="species-label ${labelClass}">${species}</span>
+          </div>
+          <div class="stage2-item">
+            ${img(imageFile, "stim-image")}
+            <p class="instr-text">Which word did the ${species} use?</p>
+          </div>
         </div>
-        ${img(imageFile, "stim-image")}
-        <p class="instr-text">Which word did the ${species} use?</p>
       </div>`,
     choices: options,
     data: {
@@ -558,18 +566,22 @@ function buildSuffixSelectionTrial(word, species, isNovel, rep) {
     // Novel words: singular (labelled) on left, plural image with "?" on right
     stimulusHTML = `
       <div class="trial-box">
-        <div class="alien-speaker">
-          ${img(alienImage, "alien-small")}
-          <span class="species-label ${labelClass}">${species}</span>
-        </div>
-        <div class="novel-word-pair">
-          <div class="novel-word-item">
-            ${img(word.singular_image, "stim-image")}
-            <p class="word-display">${word.root}</p>
+        <div class="stage2-pair">
+          <div class="stage2-item">
+            ${img(alienImage, "stim-image")}
+            <span class="species-label ${labelClass}">${species}</span>
           </div>
-          <div class="novel-word-item">
-            ${img(word.plural_image, "stim-image")}
-            <p class="word-display novel-unknown">?</p>
+          <div class="stage2-item">
+            <div class="novel-word-pair">
+              <div class="novel-word-item">
+                ${img(word.singular_image, "stim-image")}
+                <p class="word-display">${word.root}</p>
+              </div>
+              <div class="novel-word-item">
+                ${img(word.plural_image, "stim-image")}
+                <p class="word-display novel-unknown">?</p>
+              </div>
+            </div>
           </div>
         </div>
         <p class="instr-text">Which word would this ${species} use?</p>
@@ -578,11 +590,15 @@ function buildSuffixSelectionTrial(word, species, isNovel, rep) {
     // Old words: show plural image directly (stem known from training)
     stimulusHTML = `
       <div class="trial-box">
-        <div class="alien-speaker">
-          ${img(alienImage, "alien-small")}
-          <span class="species-label ${labelClass}">${species}</span>
+        <div class="stage2-pair">
+          <div class="stage2-item">
+            ${img(alienImage, "stim-image")}
+            <span class="species-label ${labelClass}">${species}</span>
+          </div>
+          <div class="stage2-item">
+            ${img(word.plural_image, "stim-image")}
+          </div>
         </div>
-        ${img(word.plural_image, "stim-image")}
         <p class="instr-text">Which word would this ${species} use?</p>
       </div>`;
   }
