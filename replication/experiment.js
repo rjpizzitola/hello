@@ -671,7 +671,7 @@ function buildAlienSelectionTrial(word, suffix, isNovel) {
   const displayWord = `${word.root}${suffix}`;
   const imageFile = word.plural_image;
 
-  const options = Math.random() < 0.5 ? ["Gulu", "Norl"] : ["Norl", "Gulu"];
+  const options = ["Gulu", "Norl"];
   const guluIndex = options.indexOf("Gulu");
   const norlIndex = options.indexOf("Norl");
 
@@ -744,18 +744,18 @@ function buildAlienSelectionTimeline() {
 // DEBRIEF + DATA SAVE
 // ─────────────────────────────────────────────────────────────────────────────
 
-const debrief = {
-  type: jsPsychHtmlButtonResponse,
-  stimulus: `
-    <div class="instr-box">
-      <h2>You're done!</h2>
-      <p>Thank you for completing this study.</p>
-      <p>This experiment investigates how people learn associations between word variations and social groups in a new language.</p>
-      <p>Your data is being saved. Please wait a moment before closing this window.</p>
-    </div>`,
-  choices: ["Save my data"],
-  data: { task: "debrief", condition: condition, subject_id: subject_id },
-};
+// const debrief = {
+//   type: jsPsychHtmlButtonResponse,
+//   stimulus: `
+//     <div class="instr-box">
+//       <h2>You're done!</h2>
+//       <p>Thank you for completing this study.</p>
+//       <p>This experiment investigates how people learn associations between word variations and social groups in a new language.</p>
+//       <p>Your data is being saved. Please wait a moment before closing this window.</p>
+//     </div>`,
+//   choices: ["Save my data"], // wait why would we need a button to save data if we're using jsPsychPipe? Just show the message and save automatically on finish?
+//   data: { task: "debrief", condition: condition, subject_id: subject_id },
+// };
 
 const save_data = {
   type: jsPsychPipe,
@@ -769,8 +769,8 @@ const end_screen = {
   type: jsPsychHtmlButtonResponse,
   stimulus: `
     <div class="instr-box">
-      <h2>All done</h2>
-      <p>Your data has been saved. You may now close this window.</p>
+      <h2>You're done!</h2>
+      <p>Thank you for completing this study. Your data has been saved. You may now close this window.</p>
     </div>`,
   choices: [], // no button — participant just closes the tab
 };
@@ -795,7 +795,6 @@ const timeline = [
   instructions_test,
   ...suffixTask,
   ...alienTask,
-  debrief,
   save_data,
   end_screen,
 ];
