@@ -40,7 +40,7 @@ function img(filename, cls = "") {
 const jsPsych = initJsPsych({
   show_progress_bar: true,
   on_finish: function () {
-    // Data is saved via jsPsychPipe; nothing extra needed here.
+    // data saved via jsPsychPipe in the timeline, so no need to do anything here
   },
 });
 
@@ -104,25 +104,18 @@ function getSuffix(word) {
     : word.notexposed_suffix;
 }
 
-// Build 7 sets of 4 words matching the paper's constraint:
-//   - exactly 2 words shown as singular, 2 shown as plural
-//   - all 4 stems are distinct (guaranteed since vocabulary has no duplicates)
-// Each word is assigned a form (singular or plural) for this set.
-// Assignment alternates so across a shuffled list words[0,2] get singular, words[1,3] get plural — then the whole set is reshuffled for presentation order.
 function buildStage1Sets() {
+  // 14 words → sets of 4 (3 full sets + 1 partial set of 2).
+  // Each set: 4 words, words[0,1] shown as singular, words[2,3] as plural.
+  // Constraint: 2 singular + 2 plural per set, all 4 stems distinct.
+  // Per rep: (3×8 + 1×4) = 28 trials. 4 reps × 28 = 112 total.
   const wordsCopy = shuffle([...vocabulary]);
   const sets = [];
   for (let i = 0; i < wordsCopy.length; i += 4) {
     const group = wordsCopy.slice(i, i + 4);
-    // Assign forms: first 2 words → singular, last 2 → plural
-    // (the group itself is already shuffled so this is random)
-    const assigned = group.map((word, idx) => ({
-      word,
-      isPlural: idx >= 2, // words[0,1] singular; words[2,3] plural
-    }));
-    sets.push(assigned);
+    sets.push(group.map((word, idx) => ({ word, isPlural: idx >= 2 })));
   }
-  return sets; // 7 sets × 4 assigned words
+  return sets;
 }
 
 function buildPassiveExposureTrial(word, isPlural, suffix, phase) {
@@ -211,29 +204,26 @@ function buildFeedbackTrial(correctWord, phase) {
 function buildStage1Timeline() {
   const timeline = [];
 
-  // Two repetitions over the full word set
-  for (let rep = 0; rep < 2; rep++) {
+  // 4 reps × (3 full sets×8 + 1 partial set×4) = 4 × 28 = 112 trials.
+  // Sets re-randomised each rep so form assignments vary across reps.
+  // Note: original paper's Stage 1 had only 2 reps, but we increase to 4 here to match total trial count, which is 112.
+  for (let rep = 0; rep < 4; rep++) {
     const sets = buildStage1Sets();
 
     for (const wordSet of sets) {
-      // Passive exposure: each word shown in its assigned form only
-      // (2 singular + 2 plural per set, all distinct stems)
-      const exposureTrials = [];
-      for (const { word, isPlural } of wordSet) {
+      // Passive exposure: 4 trials (one assigned form per word), shuffled
+      const exposureTrials = wordSet.map(({ word, isPlural }) => {
         const suffix = getSuffix(word);
-        exposureTrials.push(
-          buildPassiveExposureTrial(
-            word,
-            isPlural,
-            isPlural ? suffix : null,
-            "stage1",
-          ),
+        return buildPassiveExposureTrial(
+          word,
+          isPlural,
+          isPlural ? suffix : null,
+          "stage1",
         );
-      }
+      });
       shuffle(exposureTrials).forEach((t) => timeline.push(t));
 
-      // Forced-choice: test all 4 words in their assigned form.
-      // Shuffle so the test order is randomised independently of exposure order.
+      // Forced-choice: 4 trials (same form assignments), reshuffled independently
       for (const { word, isPlural } of shuffle([...wordSet])) {
         const suffix = getSuffix(word);
         const correctWord = isPlural ? `${word.root}${suffix}` : word.root;
@@ -389,20 +379,22 @@ const instructions_stage2 = {
 };
 
 function buildStage2Sets() {
-  // 14 words → 7 sets of 4, each with:
-  //   - 2 Gulu-assigned + 2 Norl-assigned (interleaved)
-  //   - 2 singular + 2 plural (first 2 in group → singular, last 2 → plural)
-  //   - all 4 stems distinct (guaranteed by vocabulary having no duplicates)
+  // 14 words → sets of 4 (3 full sets + 1 partial set of 2).
+  // Each word gets one form (words[0,1]→singular, words[2,3]→plural) and
+  // one species (words[0,2]→Gulu, words[1,3]→Norl).
+  // Each set: 2 singular + 2 plural, 2 Gulu + 2 Norl, all 4 stems distinct.
+  // Per rep: (3×8 + 1×4) = 28 trials. 8 reps × 28 = 224 total.
   const shuffled = shuffle([...vocabulary]);
   const sets = [];
   for (let i = 0; i < shuffled.length; i += 4) {
-    const wordGroup = shuffled.slice(i, i + 4);
-    const assigned = wordGroup.map((w, idx) => ({
-      word: w,
-      species: idx % 2 === 0 ? "Gulu" : "Norl", // w0,w2→Gulu; w1,w3→Norl
-      isPlural: idx >= 2, // w0,w1→singular; w2,w3→plural
-    }));
-    sets.push(assigned);
+    const group = shuffled.slice(i, i + 4);
+    sets.push(
+      group.map((w, idx) => ({
+        word: w,
+        isPlural: idx >= 2,
+        species: idx % 2 === 0 ? "Gulu" : "Norl",
+      })),
+    );
   }
   return sets;
 }
@@ -493,29 +485,27 @@ function buildForcedChoiceTrial2(word, suffix, isPlural, species, phase) {
 function buildStage2Timeline() {
   const timeline = [];
 
-  for (let rep = 0; rep < 2; rep++) {
+  // 8 reps × (3 full sets×8 + 1 partial set×4) = 8 × 28 = 224 trials.
+  // Sets re-randomised each rep so form/species assignments vary across reps.
+  for (let rep = 0; rep < 8; rep++) {
     const sets = buildStage2Sets();
 
     for (const wordSet of sets) {
-      // Passive exposure: each word shown in its assigned form only
-      // (2 singular + 2 plural, all distinct stems, each with alien speaker)
-      const exposureTrials = [];
-      for (const { word, species, isPlural } of wordSet) {
+      // Passive exposure: 4 trials (one form + one species per word), shuffled
+      const exposureTrials = wordSet.map(({ word, isPlural, species }) => {
         const suffix = species === "Gulu" ? word.gulu_suffix : word.norl_suffix;
-        exposureTrials.push(
-          buildPassiveExposureTrial2(
-            word,
-            isPlural,
-            isPlural ? suffix : null,
-            species,
-            "stage2",
-          ),
+        return buildPassiveExposureTrial2(
+          word,
+          isPlural,
+          isPlural ? suffix : null,
+          species,
+          "stage2",
         );
-      }
+      });
       shuffle(exposureTrials).forEach((t) => timeline.push(t));
 
-      // Forced-choice: all 4 words in their assigned form, order reshuffled
-      for (const { word, species, isPlural } of shuffle([...wordSet])) {
+      // Forced-choice: 4 trials (same assignments), reshuffled independently
+      for (const { word, isPlural, species } of shuffle([...wordSet])) {
         const suffix = species === "Gulu" ? word.gulu_suffix : word.norl_suffix;
         const correctWord = isPlural ? `${word.root}${suffix}` : word.root;
         timeline.push(
@@ -758,21 +748,8 @@ function buildAlienSelectionTimeline() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// DEBRIEF + DATA SAVE
+// DATA SAVE + END SCREEn
 // ─────────────────────────────────────────────────────────────────────────────
-
-// const debrief = {
-//   type: jsPsychHtmlButtonResponse,
-//   stimulus: `
-//     <div class="instr-box">
-//       <h2>You're done!</h2>
-//       <p>Thank you for completing this study.</p>
-//       <p>This experiment investigates how people learn associations between word variations and social groups in a new language.</p>
-//       <p>Your data is being saved. Please wait a moment before closing this window.</p>
-//     </div>`,
-//   choices: ["Save my data"], // wait why would we need a button to save data if we're using jsPsychPipe? Just show the message and save automatically on finish?
-//   data: { task: "debrief", condition: condition, subject_id: subject_id },
-// };
 
 const save_data = {
   type: jsPsychPipe,
