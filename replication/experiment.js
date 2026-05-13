@@ -68,7 +68,7 @@ const welcome = {
       <h1>Alien Language Study</h1>
       <p>Welcome, and thank you for taking part in this study.</p>
       <p>In this experiment, you will learn a short <strong>alien language</strong>. You will first practise the words, then learn how different alien species use them.</p>
-      <p>The study takes about <strong>50–60 minutes</strong>. Please make sure you are in a quiet place and will not be interrupted.</p>
+      <p>The study takes about <strong>40–50 minutes</strong>. Please make sure you are in a quiet place and will not be interrupted.</p>
       <p>Click <strong>Continue</strong> when you are ready to begin.</p>
     </div>`,
   choices: ["Continue"],
@@ -93,7 +93,7 @@ const instructions_stage1 = {
 // ─────────────────────────────────────────────────────────────────────────────
 // STAGE 1: LEARNING WITHOUT ALIENS
 // ─────────────────────────────────────────────────────────────────────────────
-// The 14 words are divided into 7 sets of 4 (2 singular + 2 plural, distinct stems).
+// The 14 words (28 forms, counting singualr and plural) are divided into 7 sets of 4 (2 singular + 2 plural, distinct stems).
 // For each set: passive exposure × 4, then forced-choice × 4 (all words).
 // The whole sequence is repeated once (2 total reps per word).
 // Condition determines which suffix appears on plural words.
@@ -105,16 +105,56 @@ function getSuffix(word) {
 }
 
 function buildStage1Sets() {
-  // 14 words → sets of 4 (3 full sets + 1 partial set of 2).
-  // Each set: 4 words, words[0,1] shown as singular, words[2,3] as plural.
-  // Constraint: 2 singular + 2 plural per set, all 4 stems distinct.
-  // Per rep: (3×8 + 1×4) = 28 trials. 4 reps × 28 = 112 total.
-  const wordsCopy = shuffle([...vocabulary]);
-  const sets = [];
-  for (let i = 0; i < wordsCopy.length; i += 4) {
-    const group = wordsCopy.slice(i, i + 4);
-    sets.push(group.map((word, idx) => ({ word, isPlural: idx >= 2 })));
+  // Create all 28 forms (singular + plural for each of the 14 words).
+  // Greedily build sets of 4 with: 4 distinct roots, exactly 2 singular + 2 plural.
+  // If a valid set can't be built from remaining forms, reshuffle and retry.
+  const allForms = [];
+  for (const word of vocabulary) {
+    allForms.push({ word, isPlural: false });
+    allForms.push({ word, isPlural: true });
   }
+  let formsLeft = shuffle([...allForms]);
+  const sets = [];
+
+  while (formsLeft.length > 0) {
+    const set = [];
+    const usedRoots = new Set();
+    let singularCount = 0;
+    let pluralCount = 0;
+
+    for (let i = 0; i < formsLeft.length && set.length < 4; i++) {
+      const form = formsLeft[i];
+      const wouldExceedSingular = !form.isPlural && singularCount >= 2;
+      const wouldExceedPlural = form.isPlural && pluralCount >= 2;
+      if (
+        usedRoots.has(form.word.root) ||
+        wouldExceedSingular ||
+        wouldExceedPlural
+      )
+        continue;
+      set.push(form);
+      usedRoots.add(form.word.root);
+      if (form.isPlural) pluralCount++;
+      else singularCount++;
+    }
+
+    if (set.length < 4) {
+      // Can't build a valid set of 4 — reshuffle remaining forms and retry.
+      // This handles edge cases where leftover forms are all the same root/type.
+      formsLeft = shuffle(formsLeft);
+      continue;
+    }
+
+    // Remove selected forms from formsLeft
+    for (const form of set) {
+      const idx = formsLeft.findIndex(
+        (f) => f.word.root === form.word.root && f.isPlural === form.isPlural,
+      );
+      if (idx !== -1) formsLeft.splice(idx, 1);
+    }
+    sets.push(set);
+  }
+
   return sets;
 }
 
@@ -204,10 +244,9 @@ function buildFeedbackTrial(correctWord, phase) {
 function buildStage1Timeline() {
   const timeline = [];
 
-  // 4 reps × (3 full sets×8 + 1 partial set×4) = 4 × 28 = 112 trials.
-  // Sets re-randomised each rep so form assignments vary across reps.
-  // Note: original paper's Stage 1 had only 2 reps, but we increase to 4 here to match total trial count, which is 112.
-  for (let rep = 0; rep < 4; rep++) {
+  // 2 reps * 7 sets * 4 words * 2 trial types (exposure + forced-choice) = 112 trials (plus feedback).
+  // matches paper specifications
+  for (let rep = 0; rep < 2; rep++) {
     const sets = buildStage1Sets();
 
     for (const wordSet of sets) {
@@ -378,25 +417,75 @@ const instructions_stage2 = {
   },
 };
 
-function buildStage2Sets() {
-  // 14 words → sets of 4 (3 full sets + 1 partial set of 2).
-  // Each word gets one form (words[0,1]→singular, words[2,3]→plural) and
-  // one species (words[0,2]→Gulu, words[1,3]→Norl).
-  // Each set: 2 singular + 2 plural, 2 Gulu + 2 Norl, all 4 stems distinct.
-  // Per rep: (3×8 + 1×4) = 28 trials. 8 reps × 28 = 224 total.
-  const shuffled = shuffle([...vocabulary]);
-  const sets = [];
-  for (let i = 0; i < shuffled.length; i += 4) {
-    const group = shuffled.slice(i, i + 4);
-    sets.push(
-      group.map((w, idx) => ({
-        word: w,
-        isPlural: idx >= 2,
-        species: idx % 2 === 0 ? "Gulu" : "Norl",
-      })),
-    );
+// Build sets of 4 for one species using the same greedy approach as Stage 1:
+// 4 distinct roots, exactly 2 singular + 2 plural. Reshuffles if stuck.
+function buildSpeciesSets(species) {
+  const allForms = [];
+  for (const word of vocabulary) {
+    allForms.push({ word, isPlural: false, species });
+    allForms.push({ word, isPlural: true, species });
   }
+  let formsLeft = shuffle([...allForms]);
+  const sets = [];
+
+  while (formsLeft.length > 0) {
+    const set = [];
+    const usedRoots = new Set();
+    let singularCount = 0;
+    let pluralCount = 0;
+
+    for (let i = 0; i < formsLeft.length && set.length < 4; i++) {
+      const form = formsLeft[i];
+      const wouldExceedSingular = !form.isPlural && singularCount >= 2;
+      const wouldExceedPlural = form.isPlural && pluralCount >= 2;
+      if (
+        usedRoots.has(form.word.root) ||
+        wouldExceedSingular ||
+        wouldExceedPlural
+      )
+        continue;
+      set.push(form);
+      usedRoots.add(form.word.root);
+      if (form.isPlural) pluralCount++;
+      else singularCount++;
+    }
+
+    if (set.length < 4) {
+      formsLeft = shuffle(formsLeft);
+      continue;
+    }
+
+    for (const form of set) {
+      const idx = formsLeft.findIndex(
+        (f) => f.word.root === form.word.root && f.isPlural === form.isPlural,
+      );
+      if (idx !== -1) formsLeft.splice(idx, 1);
+    }
+    sets.push(set);
+  }
+
   return sets;
+}
+
+function buildStage2Sets() {
+  // Build independent sets of 4 for Gulu and Norl (same greedy constraints as Stage 1).
+  // Then zip them together: each combined set has 8 trials —
+  // 4 Gulu (2 singular + 2 plural, distinct roots) +
+  // 4 Norl (2 singular + 2 plural, distinct roots).
+  // Roots are NOT required to be distinct across species within the same combined set,
+  // matching the paper's constraint that uniqueness applies within each species block.
+  const guluSets = buildSpeciesSets("Gulu");
+  const norlSets = buildSpeciesSets("Norl");
+
+  // Zip: pair guluSets[i] with norlSets[i]. If one list is longer, append remainder solo.
+  const n = Math.max(guluSets.length, norlSets.length);
+  const combined = [];
+  for (let i = 0; i < n; i++) {
+    const guluSet = guluSets[i] || [];
+    const norlSet = norlSets[i] || [];
+    combined.push([...guluSet, ...norlSet]);
+  }
+  return combined;
 }
 
 function buildPassiveExposureTrial2(word, isPlural, suffix, species, phase) {
@@ -485,13 +574,15 @@ function buildForcedChoiceTrial2(word, suffix, isPlural, species, phase) {
 function buildStage2Timeline() {
   const timeline = [];
 
-  // 8 reps × (3 full sets×8 + 1 partial set×4) = 8 × 28 = 224 trials.
-  // Sets re-randomised each rep so form/species assignments vary across reps.
-  for (let rep = 0; rep < 8; rep++) {
+  // Each combined set has 8 trials (4 Gulu + 4 Norl).
+  // Per rep: ~7 sets × (8 exposure + 8 FC) = ~112 trials.
+  // 2 reps × ~112 = ~224 trials total. ✓
+  // Sets are re-randomised each rep (new greedy draws for both species).
+  for (let rep = 0; rep < 2; rep++) {
     const sets = buildStage2Sets();
 
     for (const wordSet of sets) {
-      // Passive exposure: 4 trials (one form + one species per word), shuffled
+      // Passive exposure: 8 trials (4 Gulu + 4 Norl), shuffled together
       const exposureTrials = wordSet.map(({ word, isPlural, species }) => {
         const suffix = species === "Gulu" ? word.gulu_suffix : word.norl_suffix;
         return buildPassiveExposureTrial2(
@@ -504,7 +595,7 @@ function buildStage2Timeline() {
       });
       shuffle(exposureTrials).forEach((t) => timeline.push(t));
 
-      // Forced-choice: 4 trials (same assignments), reshuffled independently
+      // Forced-choice: 8 trials (4 Gulu + 4 Norl), reshuffled independently
       for (const { word, isPlural, species } of shuffle([...wordSet])) {
         const suffix = species === "Gulu" ? word.gulu_suffix : word.norl_suffix;
         const correctWord = isPlural ? `${word.root}${suffix}` : word.root;
@@ -529,7 +620,8 @@ const instructions_test = {
     <div class="instr-box">
       <h2>Test</h2>
       <p>You have finished learning the language! Now we will test what you have learned.</p>
-      <p>There are two short tasks. <strong>No feedback</strong> will be given this time, just answer as best you can.</p>
+      <p>There are two short tasks. In the first, you'll see an alien and an image, and you'll select which word you think that alien would use. In the second, you'll see an image and a word, and you'll select which alien you think said that word.</p>
+      </p><strong>No feedback</strong> will be given this time, just answer as best you can.</p>
       <p>Some of the words may be ones you have not seen before. That is fine, use your best judgment.</p>
       <p>Click <strong>Continue</strong> to start the test.</p>
     </div>`,

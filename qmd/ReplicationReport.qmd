@@ -194,7 +194,9 @@ Alien associated when they were exposed to it in stage 1 or if they were not.
 
 ### Differences from Original Study
 
-Explicitly describe known differences in sample, setting, procedure, and analysis plan from original study.  The goal, of course, is to minimize those differences, but differences will inevitably occur.  Also, note whether such differences are anticipated to make a difference based on claims in the original article or subsequent published research on the conditions for obtaining the effect.
+The original paper had a drag-and-drop portion of the alien-familiarization phase. jspsych does not have a 
+built-in drag and drop, so I've replaced it with some multiple choice identification questions. I don't expect
+this to affect the study.
 
 ### Methods Addendum (Post Data Collection)
 
